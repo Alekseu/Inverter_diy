@@ -11,6 +11,6 @@
 #define PROGMEM1  __attribute__((section(".progmem.data")))
 
 #include "lcd.h"
-
+#include "inverter.h"
 
 #endif /* MAIN_H_ */

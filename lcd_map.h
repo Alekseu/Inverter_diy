@@ -83,7 +83,7 @@ typedef struct{
 #define S22 (lcd_seg_t){14,3} //error
 
 #define S26 (lcd_seg_t){15,0}
-#define S25 (lcd_seg_t){15,1}
+#define S25 (lcd_seg_t){15,1} //right load
 #define S24 (lcd_seg_t){15,2}
 #define S23 (lcd_seg_t){15,3} //output
 

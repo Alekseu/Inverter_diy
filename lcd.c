@@ -9,7 +9,7 @@
 
 unsigned char lcd_ram[LCD_COUNT]={0};
 
-_read_adc *read_adc=0;
+_read_adc read_adc_lcd;
 
 // Маска сегментов: A B C D E F G (7 бит)
 // Порядок бит в маске: [0][G][F][E][D][C][B][A]
@@ -42,8 +42,8 @@ void ht1621_init(void)
 		wrCMD(LCDON);
 }
 
-void set_read_adc(_read_adc *read){
-	read_adc = read;
+void set_read_adc(_read_adc read){
+	read_adc_lcd = read;
 }
 
 void lcd_clear(void)
@@ -285,10 +285,18 @@ void drow_bat_right(bool state){
 	}
 }
 
+void drow_right_load(bool state){
+	if(state){
+		lcd_set_seg(S25);
+	} else {
+		lcd_clr_seg(S25);
+	}
+}
+
 void drow_temp(bool state, unsigned int temp){
 	if(state){
 		lcd_set_seg(S7);
-		drow_digits_left(temp);
+		drow_digits_left(temp,true);
 		lcd_set_seg(S14);
 		lcd_set_seg(S15);
 	} else {
@@ -416,6 +424,64 @@ void fault_led(bool state){
 	}
 }
 
+void drow_v_left(bool state){
+	if(state){
+		lcd_set_seg(S9);
+	} else {
+		lcd_clr_seg(S9);
+	}
+}
+
+void drow_v_right(bool state){
+	if(state){
+		lcd_set_seg(S27);
+	} else {
+		lcd_clr_seg(S27);
+	}
+}
+
+void drow_A_left(bool state){
+	if(state){
+		lcd_set_seg(S13);
+	} else {
+		lcd_clr_seg(S13);
+	}
+}
+
+void drow_A_right(bool state){
+	if(state){
+		lcd_set_seg(S31);
+	} else {
+		lcd_clr_seg(S31);
+	}
+}
+
+void drow_right_percent(bool state){
+	if(state){
+			lcd_set_seg(S28);
+		} else {
+			lcd_clr_seg(S28);
+		}
+}
+
+void drow_right_wats(bool state){
+	if(state){
+			lcd_set_seg(S30);
+		} else {
+			lcd_clr_seg(S30);
+		}
+}
+
+void drow_right_kilo_wats(bool state){
+	if(state){
+			lcd_set_seg(S26);
+			lcd_set_seg(S30);
+		} else {
+			lcd_clr_seg(S26);
+			lcd_clr_seg(S30);
+		}
+}
+
 // Универсальная функция отрисовки одной цифры
 void draw_single_digit(unsigned char val, lcd_seg_t a, lcd_seg_t b, lcd_seg_t c,
 										  lcd_seg_t d, lcd_seg_t e, lcd_seg_t f, lcd_seg_t g) {
@@ -429,10 +495,15 @@ void draw_single_digit(unsigned char val, lcd_seg_t a, lcd_seg_t b, lcd_seg_t c,
     (mask & 0x40) ? lcd_set_seg(g) : lcd_clr_seg(g);
 }
 
-void drow_digits_left(unsigned int num){
+void drow_digits_left(unsigned int num, bool dot){
 	draw_single_digit(num / 100, A11, B11, C11, D11, E11, F11, G11);
 	draw_single_digit(num / 10,  A12, B12, C12, D12, E12, F12, G12);
 	draw_single_digit(num,       A13, B13, C13, D13, E13, F13, G13);
+	if(dot){
+		lcd_set_seg(D2);
+	} else {
+		lcd_clr_seg(D2);
+	}
 }
 
 void drow_digits_midle(unsigned char num){
@@ -440,31 +511,34 @@ void drow_digits_midle(unsigned char num){
 	draw_single_digit(num,      A15, B15, C15, D15, E15, F15, G15);
 }
 
-void drow_digits_right(unsigned int num){
+void drow_digits_right(unsigned int num, bool dot){
 	draw_single_digit(num / 100, A16, B16, C16, D16, E16, F16, G16);
 	draw_single_digit(num / 10,  A17, B17, C17, D17, E17, F17, G17);
 	draw_single_digit(num,       A18, B18, C18, D18, E18, F18, G18);
+	if(dot){
+		lcd_set_seg(D5);
+	} else {
+		lcd_clr_seg(D5);
+	}
 }
 
 //чтение кнопок
 Keys read_buttons(){
-	if(read_adc!=0){
-		int value = read_adc(BUTTONS);
+	Keys key=NoKey;
+	if(read_adc_lcd!=0){
+		int value = read_adc_lcd(BUTTONS);
 		if(value>=840){
-			return MenuKey;
+			key= MenuKey;
 		}
-
 		if(value>600 && value<800){
-			return DownKey;
+			key= DownKey;
 		}
-
 		if(value>378 && value<500){
-			return UpKey;
+			key= UpKey;
 		}
-
 		if(value>215 && value<350){
-			return EscKey;
+			key= EscKey;
 		}
 	}
-	return NoKey;
+	return key;
 }

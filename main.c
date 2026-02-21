@@ -7,22 +7,19 @@
 
 #include "main.h"
 
+unsigned char lcd_update_counter=0;
 
 int main(){
-	ht1621_init();
-	lcd_clear();
-	_delay_ms(1000);
-	lcd_buf_clear();
 
-	drow_input(true);
-	drow_output(true);
-	drow_lines_under(true);
-	unsigned int counter=0;
-
+	inverter_init();
 
 	while(1){
-		drow_digits_left(counter++);
-		lcd_update();
-		_delay_ms(300);
+		if(lcd_update_counter++>=10){
+			lcd_update_counter=0;
+			lcd_update();
+		}
+		inverter_process();
+		_delay_ms(10);
 	}
 }
+
