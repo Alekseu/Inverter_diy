@@ -10,33 +10,16 @@
 #include "types.h"
 
 #define TIMERS_COUNT 5
-#define WAIT_COUNT 10
 
-void init_timers();
-//timer create_timer();
-
-
-typedef void Callback(void);
+typedef void CallBack(void);
 typedef struct {
 	int time;
 	unsigned int tick;
 	unsigned char id;
-	Callback* function;
-}timers;
-
-extern timers Timers[TIMERS_COUNT];
-
-typedef unsigned char SetTimer(unsigned char, int,Callback*);
-typedef void OffTimer(unsigned char );
-typedef	void SetTimeOut(unsigned char, int );
-typedef bool IsTimeOut(unsigned char);
-
-typedef struct {
-	SetTimer* settimer;
-	OffTimer* offTimer;
-	SetTimeOut* setTimeOut;
-	IsTimeOut* isTimeOut;
+	CallBack* function; //коллбэк будет работать из прерывания (не применть на тяжолые функции)
 }timer;
+
+extern volatile timer Timers[TIMERS_COUNT];
 
 typedef bool (*IsElapsed)(void*);
 typedef void (*Reset)(void*);
@@ -46,5 +29,13 @@ typedef struct {
 	unsigned int _wait;
 	unsigned int _stamp;
 }wait;
+
 void init_wait(wait* _wait, unsigned int);
+void init_timers();
+
+unsigned char setTimer(unsigned char id, int time, CallBack f);
+void killTimer(uint8_t id);
+void setTimeOut(uint8_t id, int time);
+bool isTimeOut(uint8_t id);
+
 #endif /* TIMER_H_ */

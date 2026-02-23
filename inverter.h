@@ -14,8 +14,8 @@
 #define RELAY_PORT PORTC
 #define RELAY_DDR  DDRC
 
-#define INVERTER   PC5
-#define BYPASS     PC4
+#define INVERTER   PC4
+#define BYPASS     PC5
 
 //charg relays
 #define CHG_RELAY_PORT PORTB

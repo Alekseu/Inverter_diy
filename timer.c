@@ -9,7 +9,10 @@
 #include "timer.h"
 
 volatile unsigned long _SystemTick = 0;
-timers Timers[TIMERS_COUNT];
+volatile timer Timers[TIMERS_COUNT];
+unsigned char timer_counter=0;
+
+unsigned char getTimeById(char id);
 
 ISR(TIMER0_OVF_vect)
 {
@@ -17,8 +20,19 @@ ISR(TIMER0_OVF_vect)
 	TCNT0=0x44;
 	// Place your code here
 	_SystemTick++;
-}
 
+	for(unsigned char i = 0; i < timer_counter; i++){
+		if (Timers[i].tick > 0){
+			Timers[i].tick--;
+			continue;
+		}
+
+		if(Timers[i].function != 0){
+			Timers[i].tick = Timers[i].time;
+			Timers[i].function();
+		}
+	}
+}
 
 void init_timers(){
 	// Timer/Counter 0 initialization
@@ -39,8 +53,61 @@ void init_timers(){
 	sei();
 }
 
+unsigned char setTimer(unsigned char id, int time, CallBack f){
+	if (id <= 0)
+		return 0;
 
+	Timers[timer_counter].id =id;
+	Timers[timer_counter].time =time;
+	Timers[timer_counter].tick = time;
+	Timers[timer_counter].function = f;
 
+	return timer_counter++;
+}
+
+void killTimer(uint8_t id){
+	char nTimer = getTimeById(id);
+	if (nTimer <= 0)
+			return;
+
+	timer_counter--;
+}
+
+void setTimeOut(uint8_t id, int time){
+	unsigned char nTimer = getTimeById(id);
+
+	if (nTimer <= 0)
+		return;
+
+	if (time == -1)
+		Timers[nTimer].tick = Timers[nTimer].time;
+	else{
+		Timers[nTimer].tick = time;
+		Timers[nTimer].time = time;
+	}
+}
+
+bool isTimeOut(uint8_t id){
+	unsigned char nTimer = getTimeById(id);
+
+	if (nTimer <= 0)
+		return false;
+
+	if (Timers[nTimer].tick)
+		return true;
+	else
+		return false;
+}
+
+unsigned char getTimeById(char id){
+	for (unsigned char i = 0; i < timer_counter; i++)
+			if (Timers[i].id == id)
+				return i;
+
+		return -1;
+}
+
+//wait functions
 bool _IsElapsed(void* _wait){
 	if (((wait*)_wait)->_stamp > _SystemTick) return true;
 

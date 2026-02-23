@@ -8,18 +8,24 @@
 #include <util/delay.h>
 #include "main.h"
 
-unsigned char lcd_update_counter=0;
-wait _led;
 wait _lcd_update;
-unsigned char t=1;
+bool state=true;
+
+void callback_func(){
+	ac_inv_led(state);
+	if(state){
+		state = false;
+	} else {
+		state = true;
+	}
+}
 
 
 int main(){
 	init_timers();
-	init_wait(&_led,500);
 	init_wait(&_lcd_update,100);
 	inverter_init();
-
+	setTimer(1,1000,&callback_func);
 
 	while(1){
 
@@ -28,17 +34,8 @@ int main(){
 			lcd_update();
 		}
 
-		inverter_process();
+		//inverter_process();
 
-		if(_led.isElapsed(&_led)){
-			_led.reset(&_led);
-			chg_led(t);
-			if(t){
-				t=0;
-			} else {
-				t=1;
-			}
-		}
 	}
 }
 
