@@ -4,7 +4,8 @@
  *  Created on: 19 февр. 2026 г.
  *      Author: Alex
  */
-
+#include <avr/io.h>
+#include <avr/interrupt.h>
 #include "ext_adc.h"
 
 spi_state_t current_state = IDLE;
@@ -57,6 +58,7 @@ void MCP3008_StartRead(unsigned char channel) {
     SPDR = 0x01;             // Отправляем стартовый байт (активирует прерывание по завершению)
 }
 
+// Функция измерения (блокирующая)
 unsigned int MCP3008_Read(unsigned char channel) {
     if (channel > 7) return 0;
 
@@ -94,7 +96,6 @@ unsigned char SPI_Transfer(unsigned char data) {
     while(!(SPSR & (1 << SPIF))); // Ждем окончания передачи
     return SPDR; // Возвращаем полученный байт
 }
-
 
 // Обработчик прерывания завершения передачи SPI
 ISR(SPI_STC_vect) {

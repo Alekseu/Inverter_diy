@@ -5,31 +5,39 @@
  *      Author: Alex
  */
 
+#include<avr/io.h>
+#include<util/delay.h>
+#include <avr/eeprom.h>
 #include "inverter.h"
 #include "lcd.h"
+#include "ext_adc.h"
+#include "adc.h"
+#include "timer.h"
 
-// Voltage Reference: AVCC pin
-#define ADC_VREF_TYPE ((0<<REFS1) | (1<<REFS0) | (0<<ADLAR))
-
-#define MEASURMENT_COUNTER 5
-#define CALCULATION_COUNTER 10
+#define MEASURMENT_DELAY 5
+#define CALCULATION_DELAY 10
 
 #define AC_IN_MIN_VOLTAGE 190
 
 //wcs1600
 const int sensitivity_dc = 22; // 22 mV/A
-const char correction = 100;//in miliamps
+const char correction = 100;   //in miliamps
 //acs715
-const int sensitivity = 66; // 185mV/A for 5A model, 100 for 20A, 66 for 30A
+const int sensitivity = 66;    // 185mV/A for 5A model, 100 for 20A, 66 for 30A
 const int adcOffset = 512;
+
+EEMEM _settings e_settings;
 
 _settings inverter_settings;
 inverter_state _state;
 Keys _key;
+
+wait _key_scan;
+wait _measurment;
+wait _calculation;
+
 unsigned int battary_voltage_source=0;
 unsigned int ac_pv_cur =0;
-unsigned char measurment_counter=0;
-unsigned char calculation_counter=0;
 unsigned char buffer_counter=0;
 
 unsigned int Battary[ADC_COUNT];
@@ -38,23 +46,30 @@ unsigned int Ac_out[ADC_COUNT];
 unsigned int Ac_cur[ADC_COUNT];
 unsigned int Dc_cur[ADC_COUNT];
 unsigned int Pv_cur[ADC_COUNT];
+unsigned int Pv_v[ADC_COUNT];
 unsigned int Chg_cur[ADC_COUNT];
 
 //private functions;
 void measurment();
 void calculation();
 unsigned int calcAVG(unsigned int *buff);
-void adc_init();
 void main_relay_init();
 void charg_relay_init();
 void calc_battary_percent();
-unsigned int read_adc(unsigned char chanel);
 
 void inverter_init(){
-	inverter_settings.chg_priority = SNU;
-	inverter_settings.output_priority = SUB;
-	inverter_settings.voltage_to_battary = 20;
-	inverter_settings.voltage_to_utility = 22;
+
+	//чтение настроек с eeprom
+	eeprom_read_block(&inverter_settings, &e_settings, sizeof(inverter_settings));
+
+//	inverter_settings.chg_priority = SNU;
+//	inverter_settings.output_priority = SUB;
+//	inverter_settings.voltage_to_battary = 20;
+//	inverter_settings.voltage_to_utility = 22;
+
+	//запись настроек в eeprom
+	//eeprom_write_block(&inverter_settings, &e_settings, sizeof(inverter_settings));
+
 	_state.lcd_state = ChargCurrentBoth;
 	_state.inverter_on_off = true;
 	_state.pv_charg_on_off = true;
@@ -76,30 +91,38 @@ void inverter_init(){
 	SPI_Init();
 	//SPI_Init_Interrupt();
 	//MCP3008_StartRead(0);
+	init_wait(&_key_scan,200);
+	init_wait(&_measurment,MEASURMENT_DELAY);
+	init_wait(&_calculation,CALCULATION_DELAY);
 }
 
 void inverter_process(){
 
-	if(measurment_counter++==MEASURMENT_COUNTER){
-		measurment_counter=0;
-		measurment();
+	if(_key_scan.isElapsed(&_key_scan)){
+		_key_scan.reset(&_key_scan);
+		_key = read_buttons();
 		switch(_key){
 		case NoKey:
 			break;
 		case EscKey:
 			break;
 		case UpKey:
-			if(_state.lcd_state++>=8)_state.lcd_state=1;
+			if(_state.lcd_state++>=7)_state.lcd_state=1;
 			break;
 		case DownKey:
-			if(_state.lcd_state--<=1)_state.lcd_state=6;
+			if(_state.lcd_state--<=1)_state.lcd_state=7;
 			break;
 		case MenuKey:
 			break;
 		}
 	}
-	if(calculation_counter++==CALCULATION_COUNTER){
-		calculation_counter=0;
+
+	if(_measurment.isElapsed(&_measurment)){
+		_measurment.reset(&_measurment);
+		measurment();
+	}
+	if(_calculation.isElapsed(&_calculation)){
+		_calculation.reset(&_calculation);
 		calculation();
 	}
 
@@ -107,6 +130,9 @@ void inverter_process(){
 	drow_lamp(true);
 	drow_bat(_state.battary_percent,false);
 	drow_load(true,_state.load_percent,false);
+
+	drow_digits_midle(_state.lcd_state);
+
 	switch(_state.lcd_state){
 		case InputOutputAC:{
 			drow_ac(true);
@@ -179,9 +205,8 @@ void inverter_process(){
 			drow_pv(true);
 			//ac_pv_cur = _state.charg_current+_state.pv_current;
 
-				drow_digits_left(adc_result,true);
-				drow_digits_right(adc_result,true);
-
+			drow_digits_left(adc_result,true);
+			drow_digits_right(adc_result,true);
 
 			drow_A_left(true);
 			drow_A_right(true);
@@ -197,8 +222,10 @@ void inverter_process(){
 	drow_invertor(_state.inverter_on_off,true,false);
 	if(_state.inverter_on_off){
 		RELAY_PORT|=(1<<INVERTER);
+		ac_inv_led(true);
 	} else {
 		RELAY_PORT&=~(1<<INVERTER);
+		ac_inv_led(false);
 	}
 
 	if(_state.ac_voltage_in>AC_IN_MIN_VOLTAGE){
@@ -220,8 +247,10 @@ void inverter_process(){
 
 	if(_state.charg_on_off){
 		CHG_RELAY_PORT|=(1<<AC_CHG);
+		chg_led(true);
 	}else{
 		CHG_RELAY_PORT&=~(1<<AC_CHG);
+		chg_led(false);
 	}
 
 	if(_state.charg_on_off || _state.pv_charg_on_off){
@@ -254,7 +283,7 @@ void measurment(){
 
 	Pv_cur[buffer_counter] = read_adc(PV_CUR);
 
-	_key = read_buttons();
+	Pv_v[buffer_counter] = MCP3008_Read(2);
 
 	if(buffer_counter++>=ADC_COUNT-1){
 		buffer_counter=0;
@@ -298,32 +327,6 @@ unsigned int calcAVG(unsigned int *buff){
 	}
 	return  result/ADC_COUNT;
 
-}
-
-void adc_init(){
-	// ADC initialization
-	// ADC Clock frequency: 93,750 kHz
-	// ADC Voltage Reference: AVCC pin
-	// ADC Auto Trigger Source: Free Running
-	// Digital input buffers on ADC0: On, ADC1: On, ADC2: On, ADC3: On
-	// ADC4: On, ADC5: On
-	DIDR0=(0<<ADC5D) | (0<<ADC4D) | (0<<ADC3D) | (0<<ADC2D) | (0<<ADC1D) | (0<<ADC0D);
-	ADMUX=ADC_VREF_TYPE;
-	ADCSRA=(1<<ADEN) | (0<<ADSC) | (1<<ADATE) | (0<<ADIF) | (0<<ADIE) | (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);
-	ADCSRB=(0<<ADTS2) | (0<<ADTS1) | (0<<ADTS0);
-
-}
-
-unsigned int read_adc(unsigned char chanel){
-	ADMUX=chanel | ADC_VREF_TYPE;
-	// Delay needed for the stabilization of the ADC input voltage
-	_delay_us(10);
-	// Start the AD conversion
-	ADCSRA|=(1<<ADSC);
-	// Wait for the AD conversion to complete
-	while ((ADCSRA & (1<<ADIF))==0);
-	ADCSRA|=(1<<ADIF);
-	return ADCW;
 }
 
 void main_relay_init(){

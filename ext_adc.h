@@ -8,9 +8,6 @@
 #ifndef EXT_ADC_H_
 #define EXT_ADC_H_
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-
 // Определения пинов (Порт B)
 #define CS_PIN    PB2  // Chip Select (SS)
 #define MOSI_PIN  PB3

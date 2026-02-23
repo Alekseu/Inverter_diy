@@ -12,5 +12,6 @@
 
 #include "lcd.h"
 #include "inverter.h"
+#include "timer.h"
 
 #endif /* MAIN_H_ */

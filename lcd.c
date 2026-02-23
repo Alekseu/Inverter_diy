@@ -5,6 +5,8 @@
  *      Author: Alex
  */
 
+#include<avr/io.h>
+#include<util/delay.h>
 #include "lcd.h"
 
 unsigned char lcd_ram[LCD_COUNT]={0};
@@ -400,30 +402,6 @@ void drow_lines_under(bool state){
 	}
 }
 
-void ac_inv_led(bool state){
-	if(state){
-		LCD_PORT|=(1<<AC_INV_LED);
-	} else {
-		LCD_PORT&=~(1<<AC_INV_LED);
-	}
-}
-
-void chg_led(bool state){
-	if(state){
-		LCD_PORT|=(1<<CHG_LED);
-	} else {
-		LCD_PORT&=~(1<<CHG_LED);
-	}
-}
-
-void fault_led(bool state){
-	if(state){
-		LCD_PORT|=(1<<FAULT_LED);
-	} else {
-		LCD_PORT&=~(1<<FAULT_LED);
-	}
-}
-
 void drow_v_left(bool state){
 	if(state){
 		lcd_set_seg(S9);
@@ -519,6 +497,31 @@ void drow_digits_right(unsigned int num, bool dot){
 		lcd_set_seg(D5);
 	} else {
 		lcd_clr_seg(D5);
+	}
+}
+
+//управление светодиодами
+void ac_inv_led(bool state){
+	if(state){
+		LCD_PORT|=(1<<AC_INV_LED);
+	} else {
+		LCD_PORT&=~(1<<AC_INV_LED);
+	}
+}
+
+void chg_led(bool state){
+	if(state){
+		LCD_PORT|=(1<<CHG_LED);
+	} else {
+		LCD_PORT&=~(1<<CHG_LED);
+	}
+}
+
+void fault_led(bool state){
+	if(state){
+		LCD_PORT|=(1<<FAULT_LED);
+	} else {
+		LCD_PORT&=~(1<<FAULT_LED);
 	}
 }
 

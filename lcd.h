@@ -4,9 +4,7 @@
  *  Created on: 15 февр. 2026 г.
  *      Author: Alex
  */
-#include<avr/io.h>
-#include<util/delay.h>
-
+#include <avr/io.h>
 #include "lcd_map.h"
 #include "types.h"
 
@@ -100,9 +98,6 @@ void drow_lines_under(bool state);
 void drow_inv(bool state);
 void drow_transit(bool state);
 void drow_eco(bool state);
-void ac_inv_led(bool state);
-void chg_led(bool state);
-void fault_led(bool state);
 void drow_v_left(bool state);
 void drow_v_right(bool state);
 void drow_A_left(bool state);
@@ -110,6 +105,12 @@ void drow_A_right(bool state);
 void drow_right_percent(bool state);
 void drow_right_wats(bool state);
 void drow_right_kilo_wats(bool state);
+
+//управление светодиодами
+void ac_inv_led(bool state);
+void chg_led(bool state);
+void fault_led(bool state);
+
 //чтение кнопок
 Keys read_buttons();
 

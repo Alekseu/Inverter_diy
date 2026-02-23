@@ -8,11 +8,7 @@
 #ifndef INVERTER_H_
 #define INVERTER_H_
 
-#include<avr/io.h>
-#include<util/delay.h>
-
 #include "types.h"
-#include "ext_adc.h"
 
 //main relays
 #define RELAY_PORT PORTC
@@ -28,14 +24,21 @@
 #define SUN_CHG PB0
 #define AC_CHG  PB1
 
-//measurment
-#define AC_IN     4
+//internal adc
+#define AC_IN     6
 #define AC_OUT 	  3
 #define AC_CUR    1
 #define BATTARY_V 2
 #define DC_CUR 	  0
-#define PV_CUR    6
 #define CHG_CUR   7
+
+//external adc
+#define PV_CUR     1
+#define PV_V       2
+#define PV_TEMP    3
+#define TRANS_TEMP 4
+#define INV_TEMP   5
+#define CHG_TEMP   6
 
 #define ADC_COUNT 10
 
