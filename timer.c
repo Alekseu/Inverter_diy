@@ -18,7 +18,7 @@ ISR(TIMER0_OVF_vect)
 {
 	// Reinitialize Timer 0 value
 	TCNT0=0x44;
-	// Place your code here
+
 	_SystemTick++;
 
 	for(unsigned char i = 0; i < timer_counter; i++){

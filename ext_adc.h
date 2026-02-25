@@ -8,29 +8,35 @@
 #ifndef EXT_ADC_H_
 #define EXT_ADC_H_
 
+#define MCP_USE_ISR 1
+
 // Определения пинов (Порт B)
 #define CS_PIN    PB2  // Chip Select (SS)
 #define MOSI_PIN  PB3
 #define MISO_PIN  PB4
 #define SCK_PIN   PB5
 
-#define AVG_WINDOW 8  // Размер окна усреднения
+#if MCP_USE_ISR == 1
+	#define CHANNELS_COUNT 8
 
-// Состояния обмена
-typedef enum {
-    IDLE,       // Покой
-    SEND_START, // Отправка 0x01
-    SEND_CONF,  // Отправка конфигурации канала
-    READ_DATA   // Чтение последнего байта
-} spi_state_t;
+	// Глобальные переменные (volatile, так как меняются в прерывании)
+	extern volatile unsigned int adc_results[CHANNELS_COUNT]; // Отфильтрованные данные
+	// Состояния для конечного автомата прерывания
+	typedef enum {
+		IDLE,       // Покой
+		STATE_START,
+		STATE_CONF,
+		STATE_READ
+	} spi_step_t;
 
-extern spi_state_t current_state;
-extern volatile uint16_t adc_result;
-extern volatile uint8_t ready_flag;
+#endif
 
-void SPI_Init();
-void SPI_Init_Interrupt();
-void MCP3008_StartRead(unsigned char channel);
+void Ext_adc_init();
+
 unsigned int MCP3008_Read(unsigned char channel);
+
+#if MCP_USE_ISR == 1
+	void StartRead();
+#endif
 
 #endif /* EXT_ADC_H_ */

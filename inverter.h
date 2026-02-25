@@ -40,7 +40,7 @@
 #define INV_TEMP   5
 #define CHG_TEMP   6
 
-#define ADC_COUNT 10
+#define ADC_COUNT 20
 
 typedef enum {
 	SUB,
@@ -62,14 +62,18 @@ typedef struct {
 }_settings;
 
 typedef enum{
-	InputOutputAC=1,
-	PvVoltage=2,
-	ChgCurrent=3,
-	BatVoltage=4,
-	LoadPercent=5,
-	LoadWats=6,
-	ChargCurrentBoth=7,
-	ChargPower=8
+	InputOutputAC=1,   //
+	PvVoltage=2,       //
+	ChgCurrent=3,      //
+	BatVoltage=4,      //
+	LoadPercent=5,     //
+	LoadWats=6,        //
+	ChargCurrentBoth=7,//
+	ChargPower=8,      //
+	Temp_CHG = 9,
+	Temp_PV  =10,
+	Temp_INV =11,
+	Temp_WP  =12
 
 }lcd_state;
 
@@ -95,6 +99,7 @@ typedef struct {
 	unsigned char battary_percent;
 	unsigned char load_percent;
 	unsigned int load_wats;
+
 	unsigned char inverter_on_off;
 	unsigned char charg_on_off;
 	unsigned char pv_charg_on_off;

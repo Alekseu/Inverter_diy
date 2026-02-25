@@ -19,13 +19,31 @@ void callback_func(){
 		state = true;
 	}
 }
+#if MCP_USE_ISR==1
+void start_read_mcp3008(){
+	StartRead();
+
+}
+#endif
+#if USE_ISR==1
+void start_read_internal(){
+	StartRead_internal();
+}
+#endif
 
 
 int main(){
 	init_timers();
-	init_wait(&_lcd_update,100);
+	init_wait(&_lcd_update,50);
+
+#if MCP_USE_ISR==1
+	setTimer(1,2,&start_read_mcp3008);
+#endif
+#if USE_ISR==1
+	setTimer(2,1,&start_read_internal);
+#endif
+
 	inverter_init();
-	setTimer(1,1000,&callback_func);
 
 	while(1){
 
@@ -34,8 +52,9 @@ int main(){
 			lcd_update();
 		}
 
-		//inverter_process();
+		inverter_process();
 
 	}
+	return 0;
 }
 

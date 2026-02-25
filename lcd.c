@@ -298,7 +298,7 @@ void drow_right_load(bool state){
 void drow_temp(bool state, unsigned int temp){
 	if(state){
 		lcd_set_seg(S7);
-		drow_digits_left(temp,true);
+		drow_digits_left(temp,false);
 		lcd_set_seg(S14);
 		lcd_set_seg(S15);
 	} else {
